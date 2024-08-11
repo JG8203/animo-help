@@ -1,60 +1,135 @@
-import { useState, useEffect } from 'react'
-
-import './Popup.css'
+import React, { useState, useEffect, FormEvent } from 'react';
+import { saveSettings, loadSettings } from '../storage';
+import './Popup.css';
 
 export function Popup() {
   const [remainingTime, setRemainingTime] = useState({ hours: 0, minutes: 0 });
+  const [settings, setSettings] = useState({
+    evilMode: false,
+    darkMode: false,
+    cheaterMode: false,
+    startTime: '',
+    endTime: '',
+    useDeviceDarkModeSettings: false,
+    idNumber: '',
+    ptpIntegration: false,
+    ptpDocumentLink: '',
+    mlsOnAnimosys: false,
+    compactMode: false,
+    notifyErrorOnLogin: false,
+    customMessage: '',
+    maxItemsToShow: 0,
+  });
 
   useEffect(() => {
     chrome.runtime.sendMessage({ type: 'REQUEST_REMAINING_TIME' });
 
-    interface TimeObject {
-      hours: number;
-      minutes: number;
-    }
-
-    const messageListener = (message: { type: string, timeObject: TimeObject }, sender: any, sendResponse: any) => {
+    const messageListener = (message: { type: string; timeObject: { hours: number; minutes: number } }, sender: any, sendResponse: any) => {
       if (message.type === 'REMAINING_TIME_RESPONSE') {
-      setRemainingTime(message.timeObject);
-      console.log("Received time object and successfully set.")
+        setRemainingTime(message.timeObject);
+        console.log("Received time object and successfully set.");
       }
     };
 
     chrome.runtime.onMessage.addListener(messageListener);
+
+    loadSettings().then(savedSettings => {
+      if (savedSettings) {
+        setSettings(savedSettings);
+      }
+    });
+
     return () => chrome.runtime.onMessage.removeListener(messageListener);
   }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      await saveSettings(settings);
+      console.log('Settings saved successfully');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setSettings(prevSettings => ({
+      ...prevSettings,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
   return (
     <main className="w-[500px] bg-gray-100 text-gray-900 font-sans">
       <div className="mx-auto bg-white rounded-lg overflow-hidden shadow-md p-5">
         <h1 className="text-2xl font-bold mb-4">Animo Help</h1>
-        <form action="#" method="post">
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="flex items-center">
-              <input type="checkbox" name="evil_mode" className="mr-2" />
+              <input
+                type="checkbox"
+                name="evilMode"
+                checked={settings.evilMode}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
               Evil Mode
-            </label>
-          </div>
-          <div className="mb-4">
-            <label className="flex items-center">
-              <input type="checkbox" name="dark_mode" className="mr-2" />
-              Dark Mode
-            </label>
-          </div>
-          <div className="mb-4 grid grid-cols-2 gap-4">
-            <label className="flex flex-col">
-              Start time
-              <input type="time" name="start_time" className="mt-1" />
-            </label>
-            <label className="flex flex-col">
-              End time
-              <input type="time" name="end_time" className="mt-1" />
             </label>
           </div>
           <div className="mb-4">
             <label className="flex items-center">
               <input
                 type="checkbox"
-                name="use_device_dark_mode_settings"
+                name="darkMode"
+                checked={settings.darkMode}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
+              Dark Mode
+            </label>
+          </div>
+          <div className="mb-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="cheaterMode"
+                checked={settings.cheaterMode}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
+              Cheater Mode
+            </label>
+          </div>
+          <div className="mb-4 grid grid-cols-2 gap-4">
+            <label className="flex flex-col">
+              Start time
+              <input
+                type="time"
+                name="startTime"
+                value={settings.startTime}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </label>
+            <label className="flex flex-col">
+              End time
+              <input
+                type="time"
+                name="endTime"
+                value={settings.endTime}
+                onChange={handleInputChange}
+                className="mt-1"
+              />
+            </label>
+          </div>
+          <div className="mb-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="useDeviceDarkModeSettings"
+                checked={settings.useDeviceDarkModeSettings}
+                onChange={handleInputChange}
                 className="mr-2"
               />
               Use device dark mode settings
@@ -65,32 +140,54 @@ export function Popup() {
               ID Number:
               <input
                 type="text"
-                name="id_number"
+                name="idNumber"
+                value={settings.idNumber}
+                onChange={handleInputChange}
                 className="mt-1 p-2 border border-gray-300 rounded w-full"
               />
             </label>
           </div>
           <div className="mb-4">
             <label className="flex items-center mb-2">
-              <input type="checkbox" name="ptp_integration" className="mr-2" />
+              <input
+                type="checkbox"
+                name="ptpIntegration"
+                checked={settings.ptpIntegration}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
               PTP Integration
             </label>
             <input
               type="text"
               placeholder="Enter PTP document link..."
-              name="ptp_document_link"
+              name="ptpDocumentLink"
+              value={settings.ptpDocumentLink}
+              onChange={handleInputChange}
               className="p-2 border border-gray-300 rounded w-full"
             />
           </div>
           <div className="mb-4">
             <label className="flex items-center">
-              <input type="checkbox" name="mls_on_animosys" className="mr-2" />
+              <input
+                type="checkbox"
+                name="mlsOnAnimosys"
+                checked={settings.mlsOnAnimosys}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
               MLS on AnimoSys
             </label>
           </div>
           <div className="mb-4">
             <label className="flex items-center">
-              <input type="checkbox" name="compact_mode" className="mr-2" />
+              <input
+                type="checkbox"
+                name="compactMode"
+                checked={settings.compactMode}
+                onChange={handleInputChange}
+                className="mr-2"
+              />
               Compact Mode
             </label>
           </div>
@@ -98,7 +195,9 @@ export function Popup() {
             <label className="flex items-center">
               <input
                 type="checkbox"
-                name="notify_error_on_login"
+                name="notifyErrorOnLogin"
+                checked={settings.notifyErrorOnLogin}
+                onChange={handleInputChange}
                 className="mr-2"
               />
               Notify Error on Login
@@ -106,31 +205,20 @@ export function Popup() {
             <input
               type="text"
               placeholder="Enter custom message"
-              name="custom_message"
+              name="customMessage"
+              value={settings.customMessage}
+              onChange={handleInputChange}
               className="p-2 border border-gray-300 rounded w-full"
             />
           </div>
           <div className="mb-4">
-            <label className="block">Cart Schedule</label>
-            <div className="flex flex-col">
-              <label className="flex items-center">
-                <input type="checkbox" name="item_1" className="mr-2" />
-                Item 1
-              </label>
-              <label className="flex items-center">
-                <input type="checkbox" name="item_2" className="mr-2" />
-                Item 2
-              </label>
-              <label className="flex items-center">
-                <input type="checkbox" name="item_3" className="mr-2" />
-                Item 3
-              </label>
-            </div>
             <label className="flex flex-col mt-2">
               Max items to show:
               <input
                 type="number"
-                name="max_items_to_show"
+                name="maxItemsToShow"
+                value={settings.maxItemsToShow}
+                onChange={handleInputChange}
                 className="mt-1 p-2 border border-gray-300 rounded"
               />
             </label>
@@ -145,14 +233,14 @@ export function Popup() {
           </div>
         </form>
         <div className="font-mono">
-          <h1 className="text-xl">
-            Time Left
-          </h1>
-          <p>{remainingTime.hours} hours and {remainingTime.minutes} left in queue.</p>
+          <h1 className="text-xl">Time Left</h1>
+          <p>
+            {remainingTime.hours} hours and {remainingTime.minutes} left in queue.
+          </p>
         </div>
       </div>
     </main>
-  )
+  );
 }
 
-export default Popup
+export default Popup;

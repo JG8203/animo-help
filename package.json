@@ -25,6 +25,7 @@
     "zip": "npm run build && node src/zip.js"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.10.0",
     "@types/xmldom": "^0.1.34",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

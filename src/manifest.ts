@@ -1,7 +1,6 @@
 import { defineManifest } from '@crxjs/vite-plugin'
 import packageData from '../package.json'
 
-//@ts-ignore
 const isDev = process.env.NODE_ENV == 'development'
 
 export default defineManifest({
@@ -27,8 +26,8 @@ export default defineManifest({
   },
   content_scripts: [
     {
-      matches: ['http://*/*', 'https://*/*'],
-      js: ['src/contentScript/index.ts'],
+      matches: ['https://enroll.dlsu.edu.ph/dlsu/view_course_offerings/*'],
+      js: ['/src/contentScript/view_course_offerings/index.ts'],
     },
   ],
   side_panel: {
@@ -40,7 +39,16 @@ export default defineManifest({
       matches: [],
     },
   ],
-  permissions: ['sidePanel', 'storage','tabs','activeTab'],
+  permissions: [
+    'sidePanel',
+    'storage',
+    'tabs',
+    'activeTab',
+  ],
+  host_permissions: [
+    'https://my.dlsu.edu.ph/*',
+    'https://c47ff58f-c091-42cb-9d10-56766316d612.us-east4-0.gcp.cloud.qdrant.io/*'
+  ],
   chrome_url_overrides: {
     newtab: 'newtab.html',
   },
